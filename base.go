@@ -207,3 +207,100 @@ func (a *Auth) request(serviceUrl ServiceUrl, action string, body interface{}) (
 	}
 	return soapResp.Body.Response, err
 }
+
+func (a *Auth) requestReport(serviceUrl ServiceUrl, action string, body interface{}) (respBody []byte, err error) {
+	type devToken struct {
+		XMLName xml.Name
+	}
+	type soapReqHeader struct {
+		XMLName          xml.Name
+		UserAgent        string `xml:"userAgent"`
+		DeveloperToken   string `xml:"developerToken"`
+		ClientCustomerId string `xml:"clientCustomerId"`
+	}
+
+	type soapReqBody struct {
+		Body interface{}
+	}
+
+	type soapReqEnvelope struct {
+		XMLName xml.Name
+		Header  soapReqHeader `xml:"Header>RequestHeader"`
+		Body    soapReqBody   `xml:"http://schemas.xmlsoap.org/soap/envelope/ Body"`
+	}
+
+	reqBody, err := xml.MarshalIndent(
+		soapReqEnvelope{
+			XMLName: xml.Name{"http://schemas.xmlsoap.org/soap/envelope/", "Envelope"},
+			Header: soapReqHeader{
+				XMLName:          xml.Name{serviceUrl.Url, "RequestHeader"},
+				UserAgent:        a.UserAgent,
+				DeveloperToken:   a.DeveloperToken,
+				ClientCustomerId: a.CustomerId,
+			},
+			Body: soapReqBody{body},
+		},
+		"  ", "  ")
+
+	if err != nil {
+		return []byte{}, err
+	}
+
+	fmt.Printf("%+v", string(reqBody))
+
+	req, err := http.NewRequest("POST", "https://adwords.google.com/api/adwords/reportdownload/v201609", bytes.NewReader(reqBody))
+	req.Header.Add("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Add("Accept", "text/xml")
+	req.Header.Add("Accept", "multipart/*")
+	contentLength := fmt.Sprintf("%d", len(reqBody))
+	req.Header.Add("Content-length", contentLength)
+	req.Header.Add("SOAPAction", action)
+	if a.Testing != nil {
+		a.Testing.Logf("request ->\n%s\n%#v\n%s\n", req.URL.String(), req.Header, string(reqBody))
+	}
+
+	resp, err := a.Client.Do(req)
+
+	if err != nil {
+		return []byte{}, err
+	}
+
+	respBody, err = ioutil.ReadAll(resp.Body)
+	fmt.Printf("%+v\n",string(respBody))
+	if a.Testing != nil {
+		a.Testing.Logf("respBody ->\n%s\n%s\n", string(respBody), resp.Status)
+	}
+
+	type soapRespHeader struct {
+		RequestId    string `xml:"requestId"`
+		ServiceName  string `xml:"serviceName"`
+		MethodName   string `xml:"methodName"`
+		Operations   int64  `xml:"operations"`
+		ResponseTime int64  `xml:"responseTime"`
+	}
+
+	type soapRespBody struct {
+		Response []byte `xml:",innerxml"`
+	}
+
+	soapResp := struct {
+		XMLName xml.Name       `xml:"http://schemas.xmlsoap.org/soap/envelope/ Envelope"`
+		Header  soapRespHeader `xml:"Header>RequestHeader"`
+		Body    soapRespBody   `xml:"http://schemas.xmlsoap.org/soap/envelope/ Body"`
+	}{}
+
+	err = xml.Unmarshal([]byte(respBody), &soapResp)
+	if err != nil {
+		return respBody, err
+	}
+	if resp.StatusCode == 400 || resp.StatusCode == 401 || resp.StatusCode == 403 || resp.StatusCode == 405 || resp.StatusCode == 500 {
+		fault := Fault{}
+		fmt.Printf("unknown error ->\n%s\n", string(soapResp.Body.Response))
+		err = xml.Unmarshal(soapResp.Body.Response, &fault)
+		if err != nil {
+			return respBody, err
+		}
+		return soapResp.Body.Response, &fault.Errors
+	}
+	return soapResp.Body.Response, err
+}

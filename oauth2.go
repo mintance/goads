@@ -5,6 +5,7 @@ import (
 	"io/ioutil"
 	"golang.org/x/net/context"
 	"golang.org/x/oauth2"
+	"fmt"
 )
 
 
@@ -42,6 +43,7 @@ func NewCredentialsFromStruct(c []byte) (ac AuthConfig, err error) {
 		return ac, err
 	}
 	ac.tokenSource = ac.OAuth2Config.TokenSource(context.TODO(), ac.OAuth2Token)
+
 	ac.Auth.Client = ac.OAuth2Config.Client(context.TODO(), ac.OAuth2Token)
 	return ac, err
 }
@@ -70,8 +72,22 @@ func (c AuthConfig) Token() (token *oauth2.Token, err error) {
 
 	// get new token from tokens source and store
 	c.OAuth2Token, err = c.tokenSource.Token()
+	fmt.Printf("%+v\n",c.OAuth2Token.AccessToken)
+
 	if err != nil {
 		return nil, err
 	}
 	return token, c.Save()
+}
+
+func (c AuthConfig) GetAccessToken() string {
+	// use cached token
+	if c.OAuth2Token.Valid() {
+		return c.OAuth2Token.AccessToken
+	}
+
+	// get new token from tokens source and store
+	c.OAuth2Token, _ = c.tokenSource.Token()
+
+	return c.OAuth2Token.AccessToken
 }
