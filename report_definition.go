@@ -10,6 +10,7 @@ import (
 	xj "github.com/basgys/goxml2json"
 	"bitbucket.org/kargell_marketing_backend/mintance.core"
 	"github.com/Sirupsen/logrus"
+	"time"
 )
 
 type ReportsRow struct {
@@ -49,6 +50,7 @@ type AdReports struct {
 type KeywordReportsRow struct {
 	KeywordName string `json:"-keywordPlacement"`
 	KeywordId string `json:"-keywordID"`
+	Date string `json:"-day"`
 }
 
 type KeywordReports struct {
@@ -82,6 +84,10 @@ func NewReportDefinitionService(auth *AuthConfig) *ReportDefinitionService {
 
 func (s ReportDefinitionService) GetReport() []ReportsRow{
 
+	today := time.Now().Local().Format("20060102")
+
+	yesterday := time.Now().AddDate(0, 0, -1).Format("20060102")
+
 	adReports := []byte(`__rdxml=<?xml version="1.0" encoding="UTF-8"?>
 				<reportDefinition>
 				<selector>
@@ -95,10 +101,14 @@ func (s ReportDefinitionService) GetReport() []ReportsRow{
 					<fields>AccountCurrencyCode</fields>
 					<fields>CriterionId</fields>
 					<fields>HeadlinePart1</fields>
+					<dateRange>
+					  <min>`+yesterday+`</min>
+					  <max>`+today+`</max>
+					</dateRange>
 				</selector>
 				<reportName>Mintance</reportName>
 				<reportType>AD_PERFORMANCE_REPORT</reportType>
-				<dateRangeType>TODAY</dateRangeType>
+				<dateRangeType>CUSTOM_DATE</dateRangeType>
 				<downloadFormat>XML</downloadFormat>
 				</reportDefinition>`)
 
@@ -107,10 +117,15 @@ func (s ReportDefinitionService) GetReport() []ReportsRow{
 				<selector>
 					<fields>Id</fields>
 					<fields>Criteria</fields>
+					<fields>Date</fields>
+					<dateRange>
+					  <min>`+yesterday+`</min>
+					  <max>`+today+`</max>
+					</dateRange>
 				</selector>
 				<reportName>Mintance Keyword</reportName>
 				<reportType>CRITERIA_PERFORMANCE_REPORT</reportType>
-				<dateRangeType>TODAY</dateRangeType>
+				<dateRangeType>CUSTOM_DATE</dateRangeType>
 				<downloadFormat>XML</downloadFormat>
 				</reportDefinition>`)
 
@@ -121,7 +136,7 @@ func (s ReportDefinitionService) GetReport() []ReportsRow{
 	for _, keyword := range keywords{
 
 		for key := range adverts {
-			if keyword.KeywordId == adverts[key].KeywordId {
+			if keyword.KeywordId == adverts[key].KeywordId || keyword.Date == adverts[key].Date {
 				adverts[key].KeywordName = keyword.KeywordName
 			}
 		}
