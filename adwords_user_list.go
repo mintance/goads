@@ -268,7 +268,6 @@ func (s *AdwordsUserListService) Mutate(adwordsUserListOperations UserListOperat
 			Local: "mutateMembers",
 		},
 		Ops: operations}
-		fmt.Printf("%+v\n",mutation)
 
 	respBody, err := s.Auth.request(adwordsUserListServiceUrl, "mutateMembers", mutation)
 
