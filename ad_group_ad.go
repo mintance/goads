@@ -213,6 +213,7 @@ type AdGroupAd struct {
 	AdGroupId		int64           `xml:"adGroupId"`
 	Ad			[]Ad            `xml:"ad"`
 	BaseCampaignId		int 		`xml:"baseCampaignId"`
+	Status		string 		`xml:"status"`
 }
 
 func (s AdGroupAdService) Get(selector Selector) (adGroupAds []AdGroupAd, totalCount int64, err error) {
@@ -239,6 +240,7 @@ func (s AdGroupAdService) Get(selector Selector) (adGroupAds []AdGroupAd, totalC
 		AdGroupAds []AdGroupAd `xml:"rval>entries"`
 	}{}
 	err = xml.Unmarshal([]byte(respBody), &getResp)
+
 	if err != nil {
 		return adGroupAds, totalCount, err
 	}
