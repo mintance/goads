@@ -184,6 +184,26 @@ func (s ReportDefinitionService) requestAdReport(reqBody []byte) []ReportsRow{
 	return  reports.Report.Table.Rows
 }
 
+func(s ReportDefinitionService) ReturnKeyword() []KeywordReportsRow{
+
+	adKeywords := []byte(`__rdxml=<?xml version="1.0" encoding="UTF-8"?>
+				<reportDefinition>
+				<selector>
+					<fields>Id</fields>
+					<fields>Criteria</fields>
+					<fields>Date</fields>
+				</selector>
+				<reportName>Mintance Keyword</reportName>
+				<reportType>CRITERIA_PERFORMANCE_REPORT</reportType>
+				<dateRangeType>TODAY</dateRangeType>
+				<downloadFormat>XML</downloadFormat>
+				</reportDefinition>`)
+
+	keywords := s.requestAdKeywords(adKeywords)
+
+	return keywords
+}
+
 func (s ReportDefinitionService) requestAdKeywords(reqBody []byte) []KeywordReportsRow{
 
 	client := &http.Client{}
