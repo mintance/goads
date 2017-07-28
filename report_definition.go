@@ -48,7 +48,7 @@ type AdReports struct {
 }
 
 type KeywordReportsRow struct {
-	KeywordName string `json:"-keywordPlacement"`
+	KeywordName string `json:"-keyword"`
 	KeywordId string `json:"-keywordID"`
 	Date string `json:"-day"`
 }
@@ -106,7 +106,7 @@ func (s ReportDefinitionService) GetReport() []ReportsRow{
 					  <max>`+today+`</max>
 					</dateRange>
 				</selector>
-				<reportName>Mintance</reportName>
+				<reportName>mintance</reportName>
 				<reportType>AD_PERFORMANCE_REPORT</reportType>
 				<dateRangeType>CUSTOM_DATE</dateRangeType>
 				<downloadFormat>XML</downloadFormat>
@@ -123,7 +123,7 @@ func (s ReportDefinitionService) GetReport() []ReportsRow{
 					  <max>`+today+`</max>
 					</dateRange>
 				</selector>
-				<reportName>Mintance Keyword</reportName>
+				<reportName>mintance Keyword</reportName>
 				<reportType>CRITERIA_PERFORMANCE_REPORT</reportType>
 				<dateRangeType>CUSTOM_DATE</dateRangeType>
 				<downloadFormat>XML</downloadFormat>
@@ -193,9 +193,9 @@ func(s ReportDefinitionService) ReturnKeyword() []KeywordReportsRow{
 					<fields>Criteria</fields>
 					<fields>Date</fields>
 				</selector>
-				<reportName>Mintance Keyword</reportName>
-				<reportType>CRITERIA_PERFORMANCE_REPORT</reportType>
-				<dateRangeType>TODAY</dateRangeType>
+				<reportName>mintance Keyword</reportName>
+				<reportType>KEYWORDS_PERFORMANCE_REPORT</reportType>
+				<dateRangeType>ALL_TIME</dateRangeType>
 				<downloadFormat>XML</downloadFormat>
 				</reportDefinition>`)
 

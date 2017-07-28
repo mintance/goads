@@ -26,6 +26,16 @@ type Cpc struct {
 
 type AdGroupCriterions []interface{}
 
+type AdGroupCriterionStruct struct{
+	AdGroupId		int64           `xml:"adGroupId"`
+	Criterion		AdCriterion           `xml:"criterion"`
+}
+
+type AdCriterion struct {
+	Id int64 `xml:"id"`
+	Text string `xml:"text"`
+}
+
 type AdGroupCriterionLabel struct {
 	AdGroupCriterionId int64 `xml:"adGroupCriterionId"`
 	LabelId            int64 `xml:"labelId"`
@@ -138,7 +148,7 @@ type AdGroupCriterionOperations map[string]AdGroupCriterions
 //
 //     https://developers.google.com/adwords/api/docs/reference/v201409/AdGroupCriterionService#get
 //
-func (s AdGroupCriterionService) Get(selector Selector) (adGroupCriterions AdGroupCriterions, totalCount int64, err error) {
+func (s AdGroupCriterionService) Get(selector Selector) (adGroupCriterions []AdGroupCriterionStruct, totalCount int64, err error) {
 	selector.XMLName = xml.Name{"", "serviceSelector"}
 	respBody, err := s.Auth.request(
 		adGroupCriterionServiceUrl,
@@ -159,9 +169,9 @@ func (s AdGroupCriterionService) Get(selector Selector) (adGroupCriterions AdGro
 	}
 	getResp := struct {
 		Size              int64             `xml:"rval>totalNumEntries"`
-		AdGroupCriterions AdGroupCriterions `xml:"rval>entries"`
+		AdGroupCriterions []AdGroupCriterionStruct `xml:"rval>entries"`
 	}{}
-	fmt.Printf("%s\n", respBody)
+
 	err = xml.Unmarshal([]byte(respBody), &getResp)
 	if err != nil {
 		return adGroupCriterions, totalCount, err

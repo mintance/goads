@@ -214,6 +214,7 @@ type AdGroupAd struct {
 	Ad			[]Ad            `xml:"ad"`
 	BaseCampaignId		int 		`xml:"baseCampaignId"`
 	Status		string 		`xml:"status"`
+	Labels               []Label           `xml:"labels"`
 }
 
 func (s AdGroupAdService) Get(selector Selector) (adGroupAds []AdGroupAd, totalCount int64, err error) {
