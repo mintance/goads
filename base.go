@@ -10,7 +10,9 @@ import (
 	"testing"
 )
 
-const (baseUrl = "https://adwords.google.com/api/adwords/cm/v201609")
+const (
+	baseUrl = "https://adwords.google.com/api/adwords/cm/v201708"
+)
 
 type ServiceUrl struct {
 	Url  string
@@ -266,7 +268,7 @@ func (a *Auth) requestReport(serviceUrl ServiceUrl, action string, body interfac
 	}
 
 	respBody, err = ioutil.ReadAll(resp.Body)
-	fmt.Printf("%+v\n",string(respBody))
+	fmt.Printf("%+v\n", string(respBody))
 	if a.Testing != nil {
 		a.Testing.Logf("respBody ->\n%s\n%s\n", string(respBody), resp.Status)
 	}
