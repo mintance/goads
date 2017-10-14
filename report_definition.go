@@ -1,29 +1,29 @@
 package gads
 
 import (
-	"fmt"
 	"bytes"
-	"io/ioutil"
-	"strings"
 	"encoding/json"
+	"fmt"
+	"io/ioutil"
 	"net/http"
-	xj "github.com/basgys/goxml2json"
-	"bitbucket.org/kargell_marketing_backend/mintance.core"
-	"github.com/Sirupsen/logrus"
+	"strings"
 	"time"
+
+	"github.com/Sirupsen/logrus"
+	xj "github.com/basgys/goxml2json"
 )
 
 type ReportsRow struct {
-	Clicks string `json:"-clicks"`
-	CampaignID string `json:"-campaignID"`
-	AdGroupID string `json:"-adGroupID"`
-	AdID string `json:"-adID"`
+	Clicks      string `json:"-clicks"`
+	CampaignID  string `json:"-campaignID"`
+	AdGroupID   string `json:"-adGroupID"`
+	AdID        string `json:"-adID"`
 	Impressions string `json:"-impressions"`
-	Cost string `json:"-cost"`
-	Currency string `json:"-currency"`
-	Headline string `json:"-headline1"`
-	Date string `json:"-day"`
-	KeywordId string `json:"-keywordID"`
+	Cost        string `json:"-cost"`
+	Currency    string `json:"-currency"`
+	Headline    string `json:"-headline1"`
+	Date        string `json:"-day"`
+	KeywordId   string `json:"-keywordID"`
 	KeywordName string
 }
 
@@ -38,7 +38,7 @@ type AdReports struct {
 		Table struct {
 			Columns struct {
 				Column []struct {
-					Name string `json:"-name"`
+					Name    string `json:"-name"`
 					Display string `json:"-display"`
 				} `json:"column"`
 			} `json:"columns"`
@@ -49,8 +49,8 @@ type AdReports struct {
 
 type KeywordReportsRow struct {
 	KeywordName string `json:"-keyword"`
-	KeywordId string `json:"-keywordID"`
-	Date string `json:"-day"`
+	KeywordId   string `json:"-keywordID"`
+	Date        string `json:"-day"`
 }
 
 type KeywordReports struct {
@@ -64,7 +64,7 @@ type KeywordReports struct {
 		Table struct {
 			Columns struct {
 				Column []struct {
-					Name string `json:"-name"`
+					Name    string `json:"-name"`
 					Display string `json:"-display"`
 				} `json:"column"`
 			} `json:"columns"`
@@ -81,8 +81,7 @@ func NewReportDefinitionService(auth *AuthConfig) *ReportDefinitionService {
 	return &ReportDefinitionService{AuthConfig: *auth}
 }
 
-
-func (s ReportDefinitionService) GetReport() []ReportsRow{
+func (s ReportDefinitionService) GetReport() []ReportsRow {
 
 	today := time.Now().Local().Format("20060102")
 
@@ -102,8 +101,8 @@ func (s ReportDefinitionService) GetReport() []ReportsRow{
 					<fields>CriterionId</fields>
 					<fields>HeadlinePart1</fields>
 					<dateRange>
-					  <min>`+yesterday+`</min>
-					  <max>`+today+`</max>
+					  <min>` + yesterday + `</min>
+					  <max>` + today + `</max>
 					</dateRange>
 				</selector>
 				<reportName>mintance</reportName>
@@ -119,8 +118,8 @@ func (s ReportDefinitionService) GetReport() []ReportsRow{
 					<fields>Criteria</fields>
 					<fields>Date</fields>
 					<dateRange>
-					  <min>`+yesterday+`</min>
-					  <max>`+today+`</max>
+					  <min>` + yesterday + `</min>
+					  <max>` + today + `</max>
 					</dateRange>
 				</selector>
 				<reportName>mintance Keyword</reportName>
@@ -133,7 +132,7 @@ func (s ReportDefinitionService) GetReport() []ReportsRow{
 
 	adverts := s.requestAdReport(adReports)
 
-	for _, keyword := range keywords{
+	for _, keyword := range keywords {
 
 		for key := range adverts {
 			if keyword.KeywordId == adverts[key].KeywordId || keyword.Date == adverts[key].Date {
@@ -144,7 +143,7 @@ func (s ReportDefinitionService) GetReport() []ReportsRow{
 	return adverts
 }
 
-func (s ReportDefinitionService) requestAdReport(reqBody []byte) []ReportsRow{
+func (s ReportDefinitionService) requestAdReport(reqBody []byte) []ReportsRow {
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", "https://adwords.google.com/api/adwords/reportdownload/v201609", bytes.NewReader(reqBody))
@@ -157,34 +156,45 @@ func (s ReportDefinitionService) requestAdReport(reqBody []byte) []ReportsRow{
 	req.Header.Add("Content-Type", "application/xml; charset=utf-8")
 
 	if err != nil {
-		mintance.Log(logrus.Fields{
-			"CustomerId": s.Auth.CustomerId,
-		}, "error","[Reports]: New request error", err.Error())
+		logrus.
+			WithFields(
+				logrus.Fields{
+					"customerId": s.Auth.CustomerId,
+				},
+			).
+			Error("[reports]: new request error", err.Error())
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		mintance.Log(logrus.Fields{
-			"CustomerId": s.Auth.CustomerId,
-		}, "error","[Reports]: Do request error", err.Error())	}
+		logrus.
+			WithFields(
+				logrus.Fields{
+					"customerId": s.Auth.CustomerId,
+				},
+			).
+			Error("[reports]: do request error", err.Error())
+	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 
 	reportsJson, err := xj.Convert(strings.NewReader(string(respBody)))
 
 	if err != nil {
-		mintance.Log(logrus.Fields{
-			"CustomerId": s.Auth.CustomerId,
-		}, "error","[Reports]: Convert xml to json error", err.Error())
+		logrus.WithFields(
+			logrus.Fields{
+				"customerId": s.Auth.CustomerId,
+			},
+		).Error("[reports]: convert xml to json error", err.Error())
 	}
 	reports := AdReports{}
 
 	json.Unmarshal([]byte(reportsJson.String()), &reports)
 
-	return  reports.Report.Table.Rows
+	return reports.Report.Table.Rows
 }
 
-func(s ReportDefinitionService) ReturnKeyword() []KeywordReportsRow{
+func (s ReportDefinitionService) ReturnKeyword() []KeywordReportsRow {
 
 	adKeywords := []byte(`__rdxml=<?xml version="1.0" encoding="UTF-8"?>
 				<reportDefinition>
@@ -204,7 +214,7 @@ func(s ReportDefinitionService) ReturnKeyword() []KeywordReportsRow{
 	return keywords
 }
 
-func (s ReportDefinitionService) requestAdKeywords(reqBody []byte) []KeywordReportsRow{
+func (s ReportDefinitionService) requestAdKeywords(reqBody []byte) []KeywordReportsRow {
 
 	client := &http.Client{}
 	req, err := http.NewRequest("POST", "https://adwords.google.com/api/adwords/reportdownload/v201609", bytes.NewReader(reqBody))
@@ -217,26 +227,40 @@ func (s ReportDefinitionService) requestAdKeywords(reqBody []byte) []KeywordRepo
 	req.Header.Add("Content-Type", "application/xml; charset=utf-8")
 
 	if err != nil {
-		mintance.Log(logrus.Fields{
-			"CustomerId": s.Auth.CustomerId,
-		}, "error","[Reports]: New request error", err.Error())
+		logrus.
+			WithFields(
+				logrus.Fields{
+					"customerId": s.Auth.CustomerId,
+				},
+			).
+			Error("[reports]: new request error", err.Error())
 	}
 
 	resp, err := client.Do(req)
 	if err != nil {
-		mintance.Log(logrus.Fields{
-			"CustomerId": s.Auth.CustomerId,
-		}, "error","[Reports]: Do request error", err.Error())	}
+		logrus.
+			WithFields(
+				logrus.Fields{
+					"customerId": s.Auth.CustomerId,
+				},
+			).
+			Error("[reports]: do request error", err.Error())
+	}
 
 	respBody, err := ioutil.ReadAll(resp.Body)
 
 	reportsJson, err := xj.Convert(strings.NewReader(string(respBody)))
 
 	if err != nil {
-		mintance.Log(logrus.Fields{
-			"CustomerId": s.Auth.CustomerId,
-		}, "error","[Reports]: Convert xml to json error", err.Error())
+		logrus.
+			WithFields(
+				logrus.Fields{
+					"customerId": s.Auth.CustomerId,
+				},
+			).
+			Error("[reports]: convert xml to json error", err.Error())
 	}
+
 	reports := KeywordReports{}
 
 	json.Unmarshal([]byte(reportsJson.String()), &reports)
